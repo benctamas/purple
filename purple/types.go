@@ -66,6 +66,15 @@ type ClientConfig struct {
 	XMLName        xml.Name        `xml:"clientConfig"`
 	Version        string          `xml:"version,attr"`
 	EmailProviders []EmailProvider `xml:"emailProvider"`
+	SourceUrl      string          `xml:"-"`
 }
 
-type ConfigMap map[string]*EmailProvider
+type DomainConfig struct {
+	Domain string
+	// emailprovider containing domain
+	EmailProvider *EmailProvider
+	// source config
+	ClientConfig *ClientConfig
+}
+
+type ConfigMap map[string]*DomainConfig

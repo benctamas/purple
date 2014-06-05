@@ -25,9 +25,22 @@ func main() {
 	}
 	fmt.Println(conf)
 
-	// builds the full map
 	var mymap *purple.ConfigMap
+
+	// builds the full map
+	// let's use 25 concurrent workers for donwnloading/parsing
 	mymap, err = purple.BuildConfigMap(url, 25)
-	fmt.Println((*mymap)["mail.telenor.dk"].IncomingServers[0].Hostname)
+	if err != nil {
+		panic(err)
+	}
+
+	// full config datablock
+	fmt.Println((*mymap)["mail.telenor.dk"].ClientConfig)
+
+	// source url of datablock
+	fmt.Println((*mymap)["mail.telenor.dk"].ClientConfig.SourceUrl)
+
+	// EmailProvider datablock containing domain
+	fmt.Println((*mymap)["mail.telenor.dk"].EmailProvider)
 
 }

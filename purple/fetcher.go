@@ -88,10 +88,12 @@ func DownloadAndParseConfig(url string) (*ClientConfig, error) {
 		fmt.Println("error parsing file:", err)
 		return nil, err
 	}
+
+	conf.SourceUrl = url
 	return &conf, nil
 }
 
-func worker(chUrls chan string, chData chan *EmailProvider, wg *sync.WaitGroup) {
+func worker(chUrls chan string, chData chan *ClientConfig, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// fmt.Println("worker start")
 
@@ -101,9 +103,7 @@ func worker(chUrls chan string, chData chan *EmailProvider, wg *sync.WaitGroup) 
 		if err != nil {
 			fmt.Println("cannot get config at %s", url)
 		} else {
-			for _, ep := range conf.EmailProviders {
-				chData <- &ep
-			}
+			chData <- conf
 		}
 		// fmt.Println("done %s", url)
 	}
@@ -119,15 +119,21 @@ func BuildConfigMap(index_url string, worker_cnt int) (*ConfigMap, error) {
 	}
 
 	chUrls := make(chan string)
-	chData := make(chan *EmailProvider)
+	chData := make(chan *ClientConfig)
 	wg := new(sync.WaitGroup)
 	confmap := ConfigMap{}
 
 	// start map builder
-	go func(confmap *ConfigMap, chData chan *EmailProvider) {
-		for ep := range chData {
-			for _, domain := range ep.Domains {
-				(*confmap)[domain] = ep
+	go func(confmap *ConfigMap, chData chan *ClientConfig) {
+		for conf := range chData {
+			for _, ep := range conf.EmailProviders {
+				for _, domain := range ep.Domains {
+					domconf := DomainConfig{}
+					domconf.Domain = domain
+					domconf.EmailProvider = &ep
+					domconf.ClientConfig = conf
+					(*confmap)[domain] = &domconf
+				}
 			}
 		}
 	}(&confmap, chData)
